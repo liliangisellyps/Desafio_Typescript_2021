@@ -17,22 +17,37 @@ document.addEventListener("DOMContentLoaded", () => {
 
 const updateStateEvent = new CustomEvent("updateState", {});
 // Exemplo de generics
-function makeState<S>(initialState: S) {
-  let state: S;
-  function getState() {
-    return state;
+class MakeState<S> {
+  state: S;
+  constructor (initialState: S) {
+    this.state = initialState;
   }
-  function setState(x: S) {
-    state = x;
+  public get State(){
+    return this.state;
+  }
+  public set State(x: S){
+    this.state = x;
     document.dispatchEvent(updateStateEvent);
   }
-  setState(initialState);
-  return { getState, setState };
 }
+
+// function makeState<S>(initialState: S) {
+//   let state: S;
+//   function getState() {
+//     return state;
+//   }
+//   function setState(x: S) {
+//     state = x;
+//     document.dispatchEvent(updateStateEvent);
+//   }
+//   setState(initialState);
+//   return { getState, setState };
+// }
 
 // Application
 function TodoApp(listElement: HTMLDivElement) {
-  const { getState, setState } = makeState<Todo[]>([]);
+  // const { getState, setState } = makeState<Todo[]>([]);
+  let makeState = new MakeState<Todo[]>([]);
   const dataSet: Set<BuiltInTag> = new Set(["home", "work", "school"]);
   let nextId = 0;
 
@@ -72,10 +87,13 @@ function TodoApp(listElement: HTMLDivElement) {
     formElement.classList.add("was-validated");
     if (!formElement.checkValidity()) return;
 
-    setState([
-      ...getState(),
-      createTodo(inputTextElement.value, inputTagElement.value),
-    ]);
+    makeState.State = [...makeState.State, createTodo(inputTextElement.value, inputTagElement.value)];
+ 
+    
+    // setState([
+    //   ...getState(),
+    //   createTodo(inputTextElement.value, inputTagElement.value),
+    // ]);
 
     // Resetar o form
     formElement.reset();
@@ -85,7 +103,7 @@ function TodoApp(listElement: HTMLDivElement) {
   const aElement = listElement.querySelector("a")!;
   aElement.addEventListener("click", (ev) => {
     ev.preventDefault();
-    setState(completeAll(getState()));
+    makeState.State = (completeAll(makeState.State));
   });
 
   function todoDivElement(todo: Todo): HTMLDivElement {
@@ -116,13 +134,14 @@ function TodoApp(listElement: HTMLDivElement) {
     const id = todo.id;
     const newTodo = toggleTodo(todo);
 
-    const data = getState().filter((el) => el.id != id);
-
+    const data = makeState.State.filter((el) => el.id != id);
+    console.log(data);
+    
     data.push(newTodo);
-
+    
     data.sort((a, b) => a.id - b.id);
-
-    setState(data);
+    
+    makeState.State = data;
   }
 
   function toggleTodo(todo: Todo): Todo {
@@ -180,7 +199,7 @@ function TodoApp(listElement: HTMLDivElement) {
   }
 
   function render() {
-    const todos = getState();
+    const todos = makeState.State;
     const total = getTotalDone(todos);
 
     const ulElement = listElement.querySelector("ul")!;
@@ -197,5 +216,5 @@ function TodoApp(listElement: HTMLDivElement) {
     render();
   });
 
-  setState([createTodo("First todo"), createTodo("Second todo")]);
+  makeState.State = ([createTodo("First todo"), createTodo("Second todo")]);
 }
